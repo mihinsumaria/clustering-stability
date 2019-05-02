@@ -1,4 +1,4 @@
-#!/Users/mihin/miniconda3/bin/python
+#!./.env/bin/python
 """This script allows user to check clustering stability"""
 import numpy as np
 
@@ -38,29 +38,17 @@ class Stability:
         return resample_indices
 
     @staticmethod
-    def create_connectivity_matrix(labels1, labels2):
-        """Creates connectivity matrix for two sets of cluster labels
+    def create_connectivity_matrix(labels):
+        """Creates connectivity matrix for a set of cluster labels
 
         Arguments:
-            labels1 {list} -- List of Labels 1
-            labels2 {list} -- List of Labels 2
-
-        Raises:
-            ValueError: raised if lengths of labels1 and labels2 do not match
+            labels {list} -- list of labels of size n
 
         Returns:
-            numpy.ndarray -- connectivity matrix
+            numpy.ndarray -- connectivity matrix of size n x n
         """
-        if len(labels1) != len(labels2):
-            raise ValueError('Lengths of labels1 and labels2 do not match:'
-                             ' {} and {} respectively'.format(len(labels1),
-                                                              len(labels2)))
-        labels1 = np.array(labels1)
-        labels2 = np.array(labels2)
-        for i, label in enumerate(labels1):
-            if not i:
-                matrix = label == labels2
-            else:
-                matrix = np.vstack((matrix, label == labels2))
+
+        labels = np.array(labels)
+        matrix = np.vstack([label == labels for label in labels])
         matrix = matrix.astype(int)
         return matrix
