@@ -1,6 +1,8 @@
 # Python
 .env
 __pycache__
+.ipynb_checkpoints
+*.ipynb
 
 # Visual Studio Code
 .vscode
