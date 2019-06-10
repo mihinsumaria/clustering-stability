@@ -56,8 +56,8 @@ class Stability:
         matrix = matrix.astype(int)
         return matrix
 
-    def compute_stability_score(self, params, number_of_resamples,
-                                dilution_factor, random_state=None):
+    def compute_stability_score(self, number_of_resamples, dilution_factor,
+                                random_state=None, params=None):
         """Computes stability score for a given set of params
 
         Arguments:
@@ -75,7 +75,7 @@ class Stability:
             {float} -- a stability score for the clustering algoritm with the
              given set of parameters for self.data
         """
-        original_labels = self.clusterer(**params).fit_predict(self.data)
+        original_labels = self.clusterer.fit_predict(self.data, **params)
         original_mat = Stability.create_connectivity_matrix(original_labels)
         sample_indices, samples = self.resample(number_of_resamples,
                                                 dilution_factor, random_state)
