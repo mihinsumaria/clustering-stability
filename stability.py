@@ -57,12 +57,11 @@ class Stability:
         return matrix
 
     def compute_stability_score(self, number_of_resamples, dilution_factor,
-                                random_state=None, params=None):
+                                random_state=None, params=None,
+                                original_labels=None):
         """Computes stability score for a given set of params
 
         Arguments:
-            params {dict} -- dictionary containing function parameters
-             corresponding to self.clusterer.fit_predict
             number_of_resamples {int} -- number of resamples to be created
             dilution_factor {float} -- a number between 0 and 1, which decides
              the number of samples in each resample
@@ -70,12 +69,18 @@ class Stability:
         Keyword Arguments:
             random_state {int} -- if int, random_state is the seed used by the
              random number generator (default: {None})
+            params {dict} -- dictionary containing function parameters
+             corresponding to self.clusterer.fit_predict (default: {None})
+            original_labels {list} -- original labels for the data given at the
+             time of initialization for the given clusterer. If not passed, then
+             its recomputed (default: {None})
 
         Returns:
-            {float} -- a stability score for the clustering algoritm with the
+            {float} -- a stability score for the clustering algorithm with the
              given set of parameters for self.data
         """
-        original_labels = self.clusterer.fit_predict(self.data, **params)
+        if not original_labels:
+            original_labels = self.clusterer.fit_predict(self.data, **params)
         original_mat = Stability.create_connectivity_matrix(original_labels)
         sample_indices, samples = self.resample(number_of_resamples,
                                                 dilution_factor, random_state)
