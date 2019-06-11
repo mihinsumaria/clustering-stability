@@ -1,5 +1,8 @@
 #!./.env/bin/python
 """This script allows user to check clustering stability"""
+import multiprocessing as mp
+from functools import partial
+
 import numpy as np
 
 
@@ -41,24 +44,53 @@ class Stability:
         return resample_indices, resamples
 
     @staticmethod
-    def create_connectivity_matrix(labels):
+    def match_labels(label, labels):
+        """Matches labels, used in create_connectivity_matrix
+        
+        Arguments:
+            label {int or string} -- label assigned to a particular sample
+            labels {numpy.ndarray} -- array of labels
+
+        
+        Returns:
+            row {numpy.ndarray} -- array of 0s and 1s indicating matches
+        """
+        row = label == labels
+        return row
+    
+    @staticmethod
+    def create_connectivity_matrix(labels, n_jobs=None):
         """Creates connectivity matrix for a set of cluster labels
 
         Arguments:
             labels {list} -- list of labels of size n
+            
+        Keyword Arguments:
+        n_jobs {int} -- number of jobs to run in parallel for matrix 
+         creation, None means 1, -1 means use all processors 
 
         Returns:
             matrix {numpy.ndarray} -- connectivity matrix of size n x n
         """
 
         labels = np.array(labels)
-        matrix = np.vstack([label == labels for label in labels])
+        if n_jobs:
+            if n_jobs == -1:
+                n_jobs = mp.cpu_count()
+            elif n_jobs > mp.cpu_count():
+                raise ValueError("n_jobs exceeds number of cores available")
+            pool = mp.Pool(processes=n_jobs)
+            rows = pool.map(partial(Stability.match_labels, labels), labels)
+        else:
+            rows = [label == labels for label in labels]
+
+        matrix = np.vstack(rows)
         matrix = matrix.astype(int)
         return matrix
 
     def compute_stability_score(self, number_of_resamples, dilution_factor,
                                 random_state=None, params=None,
-                                original_labels=None):
+                                original_labels=None, n_jobs=None):
         """Computes stability score for a given set of params
 
         Arguments:
@@ -71,9 +103,12 @@ class Stability:
              random number generator (default: {None})
             params {dict} -- dictionary containing function parameters
              corresponding to self.clusterer.fit_predict (default: {None})
-            original_labels {np.array} -- original labels for the data given at 
-             the time of initialization for the given clusterer. If not passed, then
-             its recomputed (default: {None})
+            original_labels {numpy.ndarray} -- original labels for the data 
+             given at the time of initialization for the given clusterer. If 
+             not passed, then its recomputed (default: {None})
+            n_jobs {int} -- number of jobs to run in parallel for matrix 
+             creation, refer create_connectivity_matrix docstring 
+             (default: {None})
 
         Returns:
             {float} -- a stability score for the clustering algorithm with the
@@ -81,14 +116,16 @@ class Stability:
         """
         if original_labels is None:
             original_labels = self.clusterer.fit_predict(self.data, **params)
-        original_mat = Stability.create_connectivity_matrix(original_labels)
+        original_mat = Stability.create_connectivity_matrix(original_labels,
+                                                            n_jobs)
         sample_indices, samples = self.resample(number_of_resamples,
                                                 dilution_factor, random_state)
         scores = []
         for i, sample in enumerate(samples):
             indices = sample_indices[i]
             sample_labels = self.clusterer(**params).fit_predict(sample)
-            resample_mat = Stability.create_connectivity_matrix(sample_labels)
+            resample_mat = Stability.create_connectivity_matrix(sample_labels,
+                                                                n_jobs)
             original_resample_mat = original_mat[indices][:, indices]
             score = ((original_resample_mat + resample_mat) / 2).mean()
             scores.append(score)
