@@ -71,15 +71,15 @@ class Stability:
              random number generator (default: {None})
             params {dict} -- dictionary containing function parameters
              corresponding to self.clusterer.fit_predict (default: {None})
-            original_labels {list} -- original labels for the data given at the
-             time of initialization for the given clusterer. If not passed, then
+            original_labels {np.array} -- original labels for the data given at 
+             the time of initialization for the given clusterer. If not passed, then
              its recomputed (default: {None})
 
         Returns:
             {float} -- a stability score for the clustering algorithm with the
              given set of parameters for self.data
         """
-        if not original_labels:
+        if original_labels is None:
             original_labels = self.clusterer.fit_predict(self.data, **params)
         original_mat = Stability.create_connectivity_matrix(original_labels)
         sample_indices, samples = self.resample(number_of_resamples,
