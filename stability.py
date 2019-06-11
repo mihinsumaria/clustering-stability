@@ -85,7 +85,7 @@ class Stability:
             rows = [label == labels for label in labels]
 
         matrix = np.vstack(rows)
-        matrix = matrix.astype(int)
+        matrix = matrix.astype(np.int16)
         return matrix
 
     def compute_stability_score(self, number_of_resamples, dilution_factor,
